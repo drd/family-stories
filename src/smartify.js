@@ -116,13 +116,17 @@ const smartify = function(Component, globalDescriptors = {}) {
             this._index = indices.get(Component) || 0;
             indices.set(Component, this._index + 1);
 
-            this.populateLocalData(
-                Immutable.fromJS(
-                    localState
-                        ? Component.getDefaultProps()[localState.name]
-                        : {}
-                )
-            );
+            let initialLocalState;
+            if (localState) {
+                if (Component.getDefaultProps) {
+                    initialLocalState = Component.getDefaultProps()[localState.name]
+                } else if (Component.defaultProps) {
+                    initialLocalState = Component.defaultProps[localState.name]
+                }
+            }
+            initialLocalState = initialLocalState || {};
+
+            this.populateLocalData(Immutable.fromJS(initialLocalState));
         },
 
         componentDidMount() {
@@ -152,7 +156,7 @@ const smartify = function(Component, globalDescriptors = {}) {
         },
 
         localPrefix() {
-            return (this.context.path || []).concat(Component.displayName + this._index);
+            return (this.context.path || []).concat((Component.displayName || '') + this._index);
         },
 
         populateLocalData(data) {

@@ -2,10 +2,9 @@
 
 ## Features
 
-- Add relationships
-- Show family tree
 - Add events (birth death marriage, freeform)
-- Add timelines (DOB, DOD, marriage, divorce, etc.)
+- Add dates/timelines (DOB, DOD, marriage, divorce, etc.)
+- Show family tree
 - Calculate family relationship maths
 
 ## UI
@@ -16,3 +15,8 @@
 
 - Set uploadcare url for attachments
 -- also destroy them when removed
+
+
+# DONE
+
+- [Feature] Add relationships
