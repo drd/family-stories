@@ -23,12 +23,17 @@ export default class StoryEditor extends Component {
     componentDidMount() {
         ReactDOM.findDOMNode(this).addEventListener("trix-attachment-add", ({attachment}) => {
             if (attachment.file) {
-                console.log('uploading file!!!');
-                // var ucFile = uploadcare.fileFrom('object', file);
-                // ucFile.done(fileInfo => console.log(fileInfo))
-                //       .fail((err, fileInfo) => console.log(err, fileInfo));
+                var ucFile = uploadcare.fileFrom('object', attachment.file);
+                // TODO: associate pictures with props.path
+                ucFile.done(({originalUrl, cdnUrl}) => {attachment.setAttributes({url: cdnUrl, href: cdnUrl, originalUrl})})
+                      .progress(e => e.lengthComputable && attachment.setUploadProgress(e.loaded / e.total * 100))
+                      .fail((err, fileInfo) => console.log(err, fileInfo));
             }
         });
+
+        ReactDOM.findDOMNode(this).addEventListener("trix-attachment-remove", ({attachment}) => {
+            console.log("You're wasting uploadcare storage!");
+        })
     }
 
     storyChanged(story) {
