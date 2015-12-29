@@ -5,16 +5,21 @@ import { render } from 'react-dom';
 import { Router, Route, IndexRoute } from 'react-router'
 import createBrowserHistory from 'history/lib/createBrowserHistory'
 
-import { App, Index, Family, Person } from './App';
+
+import App from 'App';
+import Home from 'pages/Home';
+import Family from 'pages/Family';
+import Person from 'pages/Person';
 
 import 'trix/dist/trix.css';
+import 'react-select/less/select.less';
 
 const history = createBrowserHistory();
 
 import World, {WorldRoot} from 'World';
 const initialState = JSON.parse(localStorage.getItem('__world__')) || {
     Family: {},
-    Person: []
+    Person: [],
 };
 
 const world = global.world = new World(initialState);
@@ -27,7 +32,7 @@ render((
     <WorldRoot world={world}>
         <Router history={history}>
             <Route path="/" component={App}>
-                <IndexRoute component={Index}/>
+                <IndexRoute component={Home}/>
                 <Route path="family" component={Family}/>
                 <Route path="person/:personId" component={Person}/>
             </Route>

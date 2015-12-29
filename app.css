@@ -1,3 +1,7 @@
 body {
     font-family: Georgia, serif;
 }
+
+.story-editor trix-editor {
+    min-height: 20rem;
+}

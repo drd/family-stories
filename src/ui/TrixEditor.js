@@ -9,12 +9,17 @@ class TrixEditor extends React.Component {
   // 1. For the first flow we forward trix-change events to this.props.onChange
   componentDidMount() {
     this.editor = document.getElementById(`editor-${this._id}`);
-    this.editor.addEventListener('trix-change', this.trixChanged.bind(this));
-    this.editor.addEventListener('trix-initialize', this.trixChanged.bind(this));
+    this._listener = this.trixChanged.bind(this);
+    this.editor.addEventListener('trix-change', this._listener);
+    this.editor.addEventListener('trix-initialize', this._listener);
   }
 
   trixChanged(nativeEvent) {
-    this.props.onChange(this.refs.input.value, nativeEvent);
+    if (!this.refs.input) {
+      setTimeout(() => this.props.onChange(this.refs.input.value, nativeEvent), 0);
+    } else {
+      this.props.onChange(this.refs.input.value, nativeEvent);
+    }
   }
 
   // 2. Value is not read after initialization (See https://github.com/spiffytech/trix/commit/0e19f2cadb5cd0092fe6b16c25919f0c4ae387de)
@@ -32,8 +37,8 @@ class TrixEditor extends React.Component {
   }
 
   componentWillUnmount() {
-    this.editor.removeEventListener('trix-change', this.props.onChange);
-    this.editor.removeEventListener('trix-initialize', this.props.onChange);
+    this.editor.removeEventListener('trix-change', this._listener);
+    this.editor.removeEventListener('trix-initialize', this._listener);
   }
 
   _id = this._generateId()

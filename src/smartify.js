@@ -15,6 +15,9 @@ const smartify = function(Component, globalDescriptors = {}) {
     let worldActions = globalDescriptors.actions = globalDescriptors.actions || {};
     let localState;
 
+    // Classic R.createClass, constructor, anonymous
+    const ComponentName = Component.displayName || Component.name || 'Anonymous';
+
     Object.entries(Component.propTypes).forEach(([name, propType]) => {
         if (propType.__localState__) {
             localState = {name, propType};
@@ -76,22 +79,22 @@ const smartify = function(Component, globalDescriptors = {}) {
             return this.world().getIn(path);
         },
 
-        _dataProps(world, resolvers) {
+        _dataProps(world, props, resolvers) {
             return Object.entries(resolvers).reduce((accumulatedProps, [key, resolver]) => {
                 // TODO: merge in local props too
-                accumulatedProps[key] = resolver(world, this.props);
+                accumulatedProps[key] = resolver(world, this.localProps(props));
                 return accumulatedProps;
             }, {});
         },
 
-        _resolveGlobalProps({values, actions} = {}) {
+        _resolveGlobalProps(props, {values, actions} = {}) {
+            const propsWithLocals = this.localProps(props);
             const worldStateProps = Object.entries(values || {}).reduce((accumulatedProps, [key, resolver]) => {
-                accumulatedProps[key] = resolver(this.world(), this.props);
+                accumulatedProps[key] = resolver(this.world(), propsWithLocals);
                 return accumulatedProps;
-            }, {});
-            const propsWithWorldStates = {...worldStateProps, ...this.props};
+            }, propsWithLocals);
             return Object.entries(actions || {}).reduce((accumulatedProps, [key, action]) => {
-                accumulatedProps[key] = action.bind(null, this.world(), propsWithWorldStates);
+                accumulatedProps[key] = action.bind(null, this.world(), worldStateProps);
                 return accumulatedProps;
             }, worldStateProps);
         },
@@ -101,11 +104,13 @@ const smartify = function(Component, globalDescriptors = {}) {
             var nextData = this.getLocal();
             var prevData = this.world().previousWorldState.getIn(this.localPath()) || Immutable.Map();
 
-            if (!shallowEqual(this.props, nextProps) || !nextData.equals(prevData) || this.componentReceivedNewGlobal()) {
+            if (!shallowEqual(this.props, nextProps) ||
+                              !nextData.equals(prevData) ||
+                              this.componentReceivedNewGlobal(nextProps)) {
                 console.group('shouldComponentUpdate:', Component.displayName);
                 console.log('shallowEqual', shallowEqual(this.props, nextProps));
                 console.log('localData', nextData.equals(prevData));
-                console.log('new globals', this.componentReceivedNewGlobal());
+                console.log('new globals', this.componentReceivedNewGlobal(nextProps));
                 console.groupEnd('shouldComponentUpdate:', Component.displayName);
                 return true;
             }
@@ -131,20 +136,20 @@ const smartify = function(Component, globalDescriptors = {}) {
 
         componentDidMount() {
             this.world().onActionPerformed(() => {
-                if (this.componentReceivedNewGlobal()) {
+                if (this.componentReceivedNewGlobal(this.props)) {
                     this.forceUpdate();
                 }
             });
         },
 
-        componentReceivedNewGlobal() {
+        componentReceivedNewGlobal(nextProps) {
             const globalValues = globalDescriptors.values || {};
-            const nextProps = this._dataProps(this.world(), globalValues);
+            const nextDataProps = this._dataProps(this.world(), nextProps, globalValues);
             const previousWorld = new World(this.world().previousWorldState);
             previousWorld.stopPerformingActions();
-            const prevProps = this._dataProps(previousWorld, globalValues);
+            const prevDataProps = this._dataProps(previousWorld, this.props, globalValues);
 
-            return !Immutable.is(Immutable.fromJS(nextProps), Immutable.fromJS(prevProps));
+            return !Immutable.is(Immutable.fromJS(nextDataProps), Immutable.fromJS(prevDataProps));
         },
 
         componentWillUnmount() {
@@ -156,16 +161,16 @@ const smartify = function(Component, globalDescriptors = {}) {
         },
 
         localPrefix() {
-            return (this.context.path || []).concat((Component.displayName || '') + this._index);
+            return (this.context.path || []).concat((Component.displayName || Component.name || '') + this._index);
         },
 
         populateLocalData(data) {
             this.world().setIn(this.localPath(), data);
         },
 
-        resolvedProps() {
+        localProps(givenProps) {
             // Replace localState prop with world-aware thingy
-            let props = {};
+            const localProps = {};
             if (localState) {
                 const getIn = (path) => this.getLocalIn(path);
                 const setIn = (path, value) => {
@@ -175,20 +180,24 @@ const smartify = function(Component, globalDescriptors = {}) {
                         this.forceUpdate();
                     }
                 };
-                props = {
-                    [localState.name]: {
-                        get: (key) => getIn([key]),
-                        getIn,
-                        set: (key, value) => setIn([key], value),
-                        setIn
-                    }
+                localProps[localState.name] = {
+                    get: (key) => getIn([key]),
+                    getIn,
+                    set: (key, value) => setIn([key], value),
+                    setIn
                 };
             }
-            let resolved = {
-                ...props,
-                ...this._resolveGlobalProps(globalDescriptors),
-                ...this.props
+            return {...localProps, ...givenProps};
+        },
+
+        resolvedProps() {
+            const localProps = this.localProps(this.props);
+            const resolved = {
+                ...this._resolveGlobalProps(localProps, globalDescriptors),
+                ...localProps,
             };
+            console.log('global', this._resolveGlobalProps(globalDescriptors));
+            console.log('local', this.localProps(this.props));
             return resolved;
         },
 
