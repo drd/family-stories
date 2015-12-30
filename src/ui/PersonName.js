@@ -21,7 +21,7 @@ export default class PersonName extends Component {
 
     render() {
         return this.props.linked
-            ? <Link to={`person/${this.props.id}`}>{this.props.name}</Link>
+            ? <Link to={`/person/${this.props.id}`}>{this.props.name}</Link>
             : <span>{this.props.name}</span>
     }
 }

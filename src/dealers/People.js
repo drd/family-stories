@@ -9,51 +9,12 @@ export const Gender = {
 };
 
 
-const RelationshipTypes = {
-    Child: {
-        name(me, child, inverted) {
-            if (inverted) {
-                if (me.gender === 'Male') {
-                    return 'Father';
-                } else {
-                    return 'Mother';
-                }
-            } else {
-                if (child.gender === 'Male') {
-                    return 'Son';
-                } else {
-                    return 'Daughter';
-                }
-            }
-        }
-    },
-    Spouse: {
-        name(me, spouse, inverted) {
-            if (inverted) {
-                if (me.gender === 'Male') {
-                    return 'Husband';
-                } else {
-                    return 'Wife';
-                }
-            } else {
-                if (spouse.gender === 'Male') {
-                    return 'Husband';
-                } else {
-                    return 'Wife';
-                }
-            }
-        }
-    }
-};
-
-
-
 const People = global.People = {
     /*
      *  Where to find a person.
      */
     personPath(id, ...extra) {
-        return ['Person', numeric(id), ...extra];
+        return ['Person', numeric(id).toString(), ...extra];
     },
 
     personExists(world, id) {
@@ -61,7 +22,7 @@ const People = global.People = {
     },
 
     nextPersonId(world) {
-        return world.get('Person').size;
+        return world.get('Person').size + 1;
     },
 
     lastPersonId(world) {
@@ -69,7 +30,6 @@ const People = global.People = {
     },
 
     findMatching(world, query) {
-        console.log("query", query);
         const re = new RegExp(`.*${query}.*`);
         const exact = new RegExp(`^{query}$`);
         const matches = [];
@@ -100,10 +60,11 @@ const People = global.People = {
     },
 
     _addPerson(ws, name, extra) {
+        const nextId = People.nextPersonId(ws);
         return ws.setIn(
-            People.personNamePath(People.nextPersonId(ws)), name
+            People.personNamePath(nextId), name
         ).mergeDeepIn(
-            People.personPath(People.lastPersonId(ws)), extra
+            People.personPath(nextId), extra
         );
     },
 
@@ -111,6 +72,10 @@ const People = global.People = {
      *  Add a person with a name.
      */
     addPerson(world, name, extra) {
+        if (!name) {
+            console.warn("Attempted to add person without a name");
+            return;
+        }
         world.performAction({
             name: `AddPerson[${name}]`,
             transaction: ws => People._addPerson(ws, name, extra)
@@ -142,7 +107,7 @@ const People = global.People = {
 
     setPersonGender(world, personId, gender) {
         world.performAction({
-            name: `SetPersonName[${personId}:${name}]`,
+            name: `SetPersonGender[${personId}:${gender}]`,
             transaction: ws => ws.setIn(People.personGenderPath(personId), gender)
         });
     },
@@ -165,7 +130,7 @@ const People = global.People = {
 
     _addParent(ws, childId, parentId, gender, name) {
         if (!parentId) {
-            ws = People._addPerson(ws, name);
+            ws = People._addPerson(ws, name, {Gender: gender});
             parentId = People.lastPersonId(ws);
         }
         [childId, parentId] = [numeric(childId), numeric(parentId)];
@@ -181,7 +146,7 @@ const People = global.People = {
 
     addFather(world, childId, {id: fatherId, name}) {
         world.performAction({
-            name: 'People/addMother',
+            name: 'People/addFather',
             transaction: ws => People._addParent(ws, childId, fatherId, Gender.male, name)
         });
     },
@@ -253,6 +218,7 @@ const People = global.People = {
      */
     addPersonAsRelationship(world, type, personId, name, id) {
         if (!(type && personId && name)) {
+            console.warn(`addPersonAsRelationship: missing type (${type}), personId (${personId}), and/or name (${name}).`);
             return;
         }
         // ick?
@@ -265,7 +231,7 @@ const People = global.People = {
     removePerson(world, personId) {
         world.performAction({
             name: `RemovePerson/${personId}`,
-            transaction: People._removePerson(ws)
+            transaction: ws => People._removePerson(ws, personId)
         });
     },
 
@@ -273,7 +239,14 @@ const People = global.People = {
         return ws
             .deleteIn(People.personPath(personId))
             .update('Person', Person => {
-                return Person.filter(p => p.get('Father') !== personId && p.get('Mother') !== personId)
+                return Person.map(p => {
+                    if (p.get('Father') === personId) {
+                        p = p.delete('Father')
+                    } else if (p.get('Mother') === personId) {
+                        p = p.delete('Mother')
+                    }
+                    return p;
+                })
             });
     }
 };

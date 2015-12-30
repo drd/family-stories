@@ -19,7 +19,7 @@ const history = createBrowserHistory();
 import World, {WorldRoot} from 'World';
 const initialState = JSON.parse(localStorage.getItem('__world__')) || {
     Family: {},
-    Person: [],
+    Person: {},
 };
 
 const world = global.world = new World(initialState);

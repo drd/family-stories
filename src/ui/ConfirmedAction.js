@@ -11,7 +11,7 @@ export default class ConfirmedAction extends Component {
         })
     }
 
-    onClick() {
+    onClick = () => {
         if (this.props.local.get('attempted')) {
             this.props.onConfirm();
         } else {
