@@ -96,7 +96,7 @@ export default class Relationships extends Component {
         relationship: ''
     }
 
-    addRelationship(event) {
+    addRelationship = (event) => {
         event.preventDefault();
 
         this.props.addNewRelationship(this.props.localState.get('relationship'),
@@ -114,7 +114,7 @@ export default class Relationships extends Component {
         return options;
     }
 
-    personSelected(selection) {
+    personSelected = (selection) => {
         if (selection === null) {
             selection = {};
         }
@@ -140,8 +140,8 @@ export default class Relationships extends Component {
                     {this.relationshipOptions().map(o => <option value={o} key={o}>{o}</option>)}
                 </select></p>
                 {!this.props.gender && <p><small>Please select a gender in order to add children</small></p>}
-                <p>Name: <PersonFinder onChange={this.personSelected.bind(this)} /></p>
-                <button onClick={this.addRelationship.bind(this)}>
+                <p>Name: <PersonFinder onChange={this.personSelected} /></p>
+                <button onClick={this.addRelationship}>
                     Add relationship
                 </button>
             </div>

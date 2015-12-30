@@ -22,7 +22,7 @@ export default class PersonFinder extends Component {
         }
     }
 
-    choosePerson(selection) {
+    choosePerson = (selection) => {
         if (selection === null) {
             selection = {};
         }
@@ -30,17 +30,17 @@ export default class PersonFinder extends Component {
         this.props.onChange(selection);
     }
 
-    loadOptions(input, callback) {
+    loadOptions = (input, callback) => {
         this.props.local.set('query', input);
         callback(null, {options: this.props.matchingPeople(input)});
     }
 
     render() {
-        return <Select.Async loadOptions={this.loadOptions.bind(this)}
+        return <Select.Async loadOptions={this.loadOptions}
                              clearable
                              ignoreCase={false}
                              value={this.props.local.get('selected').toJS()}
-                             onChange={this.choosePerson.bind(this)}/>;
+                             onChange={this.choosePerson}/>;
     }
 
 

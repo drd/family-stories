@@ -9,12 +9,11 @@ class TrixEditor extends React.Component {
   // 1. For the first flow we forward trix-change events to this.props.onChange
   componentDidMount() {
     this.editor = document.getElementById(`editor-${this._id}`);
-    this._listener = this.trixChanged.bind(this);
-    this.editor.addEventListener('trix-change', this._listener);
-    this.editor.addEventListener('trix-initialize', this._listener);
+    this.editor.addEventListener('trix-change', this.trixChanged);
+    this.editor.addEventListener('trix-initialize', this.trixChanged);
   }
 
-  trixChanged(nativeEvent) {
+  trixChanged = (nativeEvent) => {
     if (!this.refs.input) {
       setTimeout(() => this.props.onChange(this.refs.input.value, nativeEvent), 0);
     } else {
@@ -37,8 +36,8 @@ class TrixEditor extends React.Component {
   }
 
   componentWillUnmount() {
-    this.editor.removeEventListener('trix-change', this._listener);
-    this.editor.removeEventListener('trix-initialize', this._listener);
+    this.editor.removeEventListener('trix-change', this.trixChanged);
+    this.editor.removeEventListener('trix-initialize', this.trixChanged);
   }
 
   _id = this._generateId()

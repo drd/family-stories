@@ -36,13 +36,13 @@ export default class StoryEditor extends Component {
         })
     }
 
-    storyChanged(story) {
+    storyChanged = (story) => {
         this.props.setStory(story);
     }
 
     render() {
         return <div className="story-editor">
-            <TrixEditor value={this.props.familyStory} onChange={this.storyChanged.bind(this)}/>
+            <TrixEditor value={this.props.familyStory} onChange={this.storyChanged}/>
         </div>;
     }
 }
